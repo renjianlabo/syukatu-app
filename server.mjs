@@ -202,6 +202,9 @@ function sendJson(response, status, value) {
   response.end(JSON.stringify(value));
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  createAppServer().listen(PORT, () => console.log(`就活情報整理アプリ: http://localhost:${PORT}`));
+const appServer = createAppServer();
+export default appServer;
+
+if (!process.env.VERCEL && process.argv[1] === fileURLToPath(import.meta.url)) {
+  appServer.listen(PORT, () => console.log(`就活情報整理アプリ: http://localhost:${PORT}`));
 }
