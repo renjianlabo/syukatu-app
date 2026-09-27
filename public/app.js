@@ -17,7 +17,22 @@ const page = (html,cls='') => { app.innerHTML = `<div class="screen ${cls}">${ht
 function notice(message,kind='success') { const host=app.querySelector('.screen-content .content-wrap')||app.querySelector('.screen-content');if(!host)return;host.querySelector('.inline-notice')?.remove();const el=document.createElement('div');el.className=`inline-notice ${kind==='error'?'is-error':''}`;el.setAttribute('role',kind==='error'?'alert':'status');el.textContent=message;host.prepend(el);clearTimeout(notice.timer);notice.timer=setTimeout(()=>el.remove(),4000); }
 async function api(path,opt={}) { const r=await fetch(path,{method:opt.method||'GET',headers:opt.body?{'Content-Type':'application/json'}:undefined,body:opt.body?JSON.stringify(opt.body):undefined,signal:opt.signal}); const json=await r.json().catch(()=>({})); if(!r.ok) throw Error(json.error||'処理に失敗しました。'); return json; }
 async function refresh() { S.data=await api('/api/data'); }
-function sortedPins() { const day=d=>Math.round((new Date(d+'T12:00:00')-new Date(today()+'T12:00:00'))/86400000); return S.data.cards.filter(c=>c.pinned).sort((a,b)=>{if(S.sort==='nearest'){if(!!a.eventDate!==!!b.eventDate)return a.eventDate?-1:1;if(a.eventDate&&b.eventDate){const n=Math.abs(day(a.eventDate))-Math.abs(day(b.eventDate));if(n)return n;}}const n=b.createdAt.localeCompare(a.createdAt);return S.sort==='oldest'?-n:n;}); }
+function sortedPins() {
+  const reference = today();
+  const dateGroup = c => !c.eventDate ? 1 : c.eventDate < reference ? 2 : 0;
+  return S.data.cards.filter(c => c.pinned).sort((a, b) => {
+    if (S.sort === 'nearest') {
+      const aGroup = dateGroup(a), bGroup = dateGroup(b);
+      if (aGroup !== bGroup) return aGroup - bGroup;
+      if (aGroup === 0) {
+        const date = a.eventDate.localeCompare(b.eventDate);
+        if (date) return date;
+      }
+    }
+    const created = (b.createdAt ?? '').localeCompare(a.createdAt ?? '');
+    return S.sort === 'oldest' ? -created : created;
+  });
+}
 function cardHtml(c,pinned=false,compact=false) {
   const meta=`${c.eventDate?short(c.eventDate):'日付なし'} · 作成 ${short(c.createdAt)}${past(c)?' · 過去':''}`;
   if(compact) return `<article class="info-card pinned compact" data-pin="${esc(c.id)}"><button class="pin-heading" data-expand="${esc(c.id)}" aria-expanded="${S.expanded===c.id}">${S.expanded===c.id?'<span class="pin-mark"></span>':''}<span>${esc(c.title)}</span>${past(c)?'<span class="past-badge">過去</span>':''}</button>${S.expanded===c.id?`<p class="card-meta">${meta}</p><p class="card-body">${esc(c.body)}</p>${btn('詳細を見る','secondary',`data-card="${esc(c.id)}"`)}`:''}</article>`;

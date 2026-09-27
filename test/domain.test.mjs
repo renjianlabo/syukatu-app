@@ -34,16 +34,24 @@ test('今日のカードは過去にならず、前日のカードだけが過�
   assert.equal(isPastCard({ eventDate: null }, '2026-08-30'), false);
 });
 
-test('ピン留めは明示した日付が今日に近い順、日付なしは最後に並ぶ', () => {
+test('ピン留めの日付順は今日・未来、日付なし、過去の順に並ぶ', () => {
   const cards = [
-    { id: 'past-old', pinned: true, eventDate: '2026-08-10', updatedAt: '2026-01-01' },
-    { id: 'none', pinned: true, eventDate: null, updatedAt: '2026-01-01' },
-    { id: 'future-far', pinned: true, eventDate: '2026-09-20', updatedAt: '2026-01-01' },
-    { id: 'past-near', pinned: true, eventDate: '2026-08-29', updatedAt: '2026-01-01' },
-    { id: 'today', pinned: true, eventDate: '2026-08-30', updatedAt: '2026-01-01' },
-    { id: 'not-pinned', pinned: false, eventDate: '2026-08-30', updatedAt: '2026-01-01' }
+    { id: 'past-yesterday-old', pinned: true, eventDate: '2026-09-27', createdAt: '2026-09-01T00:00:00Z' },
+    { id: 'none-old', pinned: true, eventDate: null, createdAt: '2026-09-01T00:00:00Z' },
+    { id: 'future-far', pinned: true, eventDate: '2026-10-14', createdAt: '2026-09-01T00:00:00Z' },
+    { id: 'past-week-new', pinned: true, eventDate: '2026-09-22', createdAt: '2026-09-12T00:00:00Z' },
+    { id: 'today-old', pinned: true, eventDate: '2026-09-28', createdAt: '2026-09-01T00:00:00Z' },
+    { id: 'future-same-old', pinned: true, eventDate: '2026-09-30', createdAt: '2026-09-02T00:00:00Z' },
+    { id: 'tomorrow', pinned: true, eventDate: '2026-09-29', createdAt: '2026-09-01T00:00:00Z' },
+    { id: 'none-new', pinned: true, eventDate: null, createdAt: '2026-09-10T00:00:00Z' },
+    { id: 'today-new', pinned: true, eventDate: '2026-09-28', createdAt: '2026-09-10T00:00:00Z' },
+    { id: 'past-yesterday-mid', pinned: true, eventDate: '2026-09-27', createdAt: '2026-09-06T00:00:00Z' },
+    { id: 'future-same-new', pinned: true, eventDate: '2026-09-30', createdAt: '2026-09-09T00:00:00Z' },
+    { id: 'not-pinned', pinned: false, eventDate: '2026-09-28', createdAt: '2026-09-13T00:00:00Z' }
   ];
-  assert.deepEqual(sortPinnedCards(cards, 'nearest', '2026-08-30').map(({ id }) => id), ['today', 'past-near', 'past-old', 'future-far', 'none']);
+  const expected = ['today-new', 'today-old', 'tomorrow', 'future-same-new', 'future-same-old', 'future-far', 'none-new', 'none-old', 'past-week-new', 'past-yesterday-mid', 'past-yesterday-old'];
+  assert.deepEqual(sortPinnedCards(cards, 'nearest', '2026-09-28').map(({ id }) => id), expected);
+  assert.deepEqual(sortPinnedCards(cards, '2026-09-28').map(({ id }) => id), expected, '旧形式の参照日引数も維持');
 });
 
 test('ピン留めの新しい順・古い順は作成日時だけを使う', () => {

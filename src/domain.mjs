@@ -64,13 +64,15 @@ export function isPastCard(card, today = localDateString()) {
 export function sortPinnedCards(cards, mode = 'newest', today = localDateString()) {
   // Older callers passed the reference date as the second argument.
   if (/^\d{4}-\d{2}-\d{2}$/.test(mode)) { today = mode; mode = 'nearest'; }
-  const dayNumber = (date) => Math.round((new Date(`${date}T12:00:00`).getTime() - new Date(`${today}T12:00:00`).getTime()) / 86_400_000);
+  const dateGroup = (card) => !card.eventDate ? 1 : card.eventDate < today ? 2 : 0;
   return [...cards].filter((card) => card.pinned).sort((a, b) => {
     if (mode === 'nearest') {
-      if (Boolean(a.eventDate) !== Boolean(b.eventDate)) return a.eventDate ? -1 : 1;
-      if (a.eventDate && b.eventDate) {
-        const difference = Math.abs(dayNumber(a.eventDate)) - Math.abs(dayNumber(b.eventDate));
-        if (difference) return difference;
+      const aGroup = dateGroup(a);
+      const bGroup = dateGroup(b);
+      if (aGroup !== bGroup) return aGroup - bGroup;
+      if (aGroup === 0) {
+        const date = a.eventDate.localeCompare(b.eventDate);
+        if (date) return date;
       }
     }
     const created = (b.createdAt ?? '').localeCompare(a.createdAt ?? '');
