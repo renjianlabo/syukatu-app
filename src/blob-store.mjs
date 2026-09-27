@@ -1,3 +1,4 @@
+import { BlobPreconditionFailedError } from '@vercel/blob';
 import { EMPTY_STATE } from './store.mjs';
 
 const STATE_PATH = 'app-data.json';
@@ -58,7 +59,7 @@ export class BlobStore {
           result = candidate;
           return;
         } catch (error) {
-          if (error.name === 'BlobPreconditionFailedError') continue;
+          if (error instanceof BlobPreconditionFailedError) continue;
           if (!current && await this.#read()) continue;
           throw error;
         }
