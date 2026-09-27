@@ -1,0 +1,7 @@
+# Local application data is never a deployment input.
+data/
+
+# QA screenshots and local environment files are not runtime assets.
+artifacts/
+.env
+.env.*

@@ -1,7 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
-const EMPTY_STATE = Object.freeze({ version: 1, companies: [], categories: [], cards: [] });
+export const EMPTY_STATE = Object.freeze({ version: 1, companies: [], categories: [], cards: [] });
 
 export class JsonStore {
   #filePath;

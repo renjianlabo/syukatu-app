@@ -4,13 +4,22 @@
 
 ## 起動
 
-Node.js 20以上が必要です。アプリ本体にnpm依存パッケージはありません。
+Node.js 20以上が必要です。依存パッケージを `npm install` で導入します。
 
 ```powershell
+npm install
 npm start
 ```
 
 既定では `http://localhost:3000` に起動し、`data/app-data.json` に保存します。`PORT` と `DATA_FILE` で変更できます。
+
+## Vercelへの配置
+
+Vercelではプロジェクトに**Private**のVercel Blob Storeを接続し、`BLOB_READ_WRITE_TOKEN`を環境変数に設定してください。トークンがあればBlob内の`app-data.json`を保存先に選び、`/var/task`やローカルJSONには書き込みません。初回は空の状態を作成します。Vercelでトークンがない場合は起動時に設定エラーを出します。
+
+ローカルではトークンを設定しなければ従来どおり`data/app-data.json`を使用します。ローカルJSONの内容はBlobへ自動移行されません。`GEMINI_API_KEY`はAI整理を使う場合に別途設定してください。
+
+個人データをデプロイへ含めないため、Git連携または通常の`vercel deploy`を使用してください。ローカルの`data/`がある状態で作った出力を`vercel deploy --prebuilt`で送信しないでください。
 
 ## 保存内容と互換性
 

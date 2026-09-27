@@ -3,14 +3,14 @@ import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import { JsonStore } from './src/store.mjs';
+import { createAppStore } from './src/create-store.mjs';
 import { httpError, normalizeCardInput, sortPinnedCards } from './src/domain.mjs';
 import { organizeCompanyWithGemini, organizeWithGemini } from './src/gemini.mjs';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
 const PUBLIC_ROOT = join(ROOT, 'public');
 const PORT = Number(process.env.PORT || 3000);
-const store = await new JsonStore(process.env.DATA_FILE || join(ROOT, 'data', 'app-data.json')).init();
+const store = await createAppStore();
 
 const MIME_TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml' };
 
@@ -18,7 +18,10 @@ export function createAppServer({ appStore = store, organizer = organizeWithGemi
   return createServer(async (request, response) => {
     try {
       const url = new URL(request.url, 'http://localhost');
-      if (url.pathname.startsWith('/api/')) return await handleApi(request, response, url, appStore, organizer, companyOrganizer);
+      if (url.pathname.startsWith('/api/')) {
+        await appStore.refresh?.();
+        return await handleApi(request, response, url, appStore, organizer, companyOrganizer);
+      }
       return await serveStatic(response, url.pathname);
     } catch (error) {
       if (error.name === 'AbortError') return;
