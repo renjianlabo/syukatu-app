@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { BlobPreconditionFailedError } from '@vercel/blob';
 import { BlobStore } from '../src/blob-store.mjs';
 import { createAppStore } from '../src/create-store.mjs';
 import { JsonStore } from '../src/store.mjs';
@@ -11,15 +10,13 @@ import { createAppServer } from '../server.mjs';
 
 function mockPrivateBlob() {
   let contents = null;
-  let revision = 0;
-  let conflictsRemaining = 0;
-  let concurrentMutation = () => {};
   const calls = [];
   return {
     calls,
-    forceConflicts(count, mutate = () => {}) {
-      conflictsRemaining = count;
-      concurrentMutation = mutate;
+    mutateRemotely(mutator) {
+      const state = JSON.parse(contents);
+      mutator(state);
+      contents = JSON.stringify(state);
     },
     async get(path, options) {
       assert.equal(path, 'app-data.json');
@@ -28,29 +25,18 @@ function mockPrivateBlob() {
       assert.equal(options.token, 'test-token');
       calls.push('get');
       if (contents === null) return null;
-      return { statusCode: 200, stream: new Response(contents).body, blob: { etag: `etag-${revision}` } };
+      return { statusCode: 200, stream: new Response(contents).body };
     },
     async put(path, body, options) {
       assert.equal(path, 'app-data.json');
       assert.equal(options.access, 'private');
       assert.equal(options.token, 'test-token');
       assert.equal(options.contentType, 'application/json');
+      assert.equal(options.allowOverwrite, true);
+      assert.equal('ifMatch' in options, false);
       calls.push('put');
-      if (options.ifMatch && conflictsRemaining > 0) {
-        conflictsRemaining--;
-        const concurrent = JSON.parse(contents);
-        concurrentMutation(concurrent);
-        contents = JSON.stringify(concurrent);
-        revision++;
-        throw new BlobPreconditionFailedError();
-      }
-      if (contents !== null && (!options.allowOverwrite || options.ifMatch !== `etag-${revision}`)) {
-        if (options.ifMatch) throw new BlobPreconditionFailedError();
-        throw new Error('BlobAlreadyExistsError');
-      }
       contents = body;
-      revision++;
-      return { etag: `etag-${revision}` };
+      return {};
     }
   };
 }
@@ -79,10 +65,10 @@ test('保存先はトークンの有無で切り替わり、Vercelでトーク�
   }
 });
 
-test('ETag競合後は最新Blobを読み直し、mutatorを再適用して保存する', async () => {
+test('更新前に最新Blobを読み、allowOverwriteで同じapp-data.jsonへ保存する', async () => {
   const api = mockPrivateBlob();
   const store = await new BlobStore({ api, token: 'test-token' }).init();
-  api.forceConflicts(1, state => state.categories.push({ id: 'remote', name: '別Functionの変更' }));
+  api.mutateRemotely(state => state.categories.push({ id: 'remote', name: '別Functionの変更' }));
 
   let mutations = 0;
   await store.update(state => {
@@ -90,50 +76,46 @@ test('ETag競合後は最新Blobを読み直し、mutatorを再適用して保�
     state.cards.push({ id: 'local', title: '今回の変更' });
   });
 
-  assert.equal(mutations, 2);
+  assert.equal(mutations, 1);
   assert.deepEqual(store.snapshot().categories.map(c => c.id), ['remote']);
   assert.deepEqual(store.snapshot().cards.map(c => c.id), ['local']);
   const nextRequest = await new BlobStore({ api, token: 'test-token' }).init();
   assert.deepEqual(nextRequest.snapshot(), store.snapshot());
 });
 
-test('ETag競合が5回続いた場合だけ409を返す', async () => {
-  const api = mockPrivateBlob();
-  const store = await new BlobStore({ api, token: 'test-token' }).init();
-  api.forceConflicts(5);
-
-  let mutations = 0;
-  await assert.rejects(store.update(state => {
-    mutations++;
-    state.cards.push({ id: 'unsaved' });
-  }), error => error.status === 409);
-
-  assert.equal(mutations, 5);
-  assert.deepEqual(store.snapshot().cards, []);
-});
-
-test('POST /api/cards は競合を再試行し、5回続いた場合はHTTP 409を返す', async (t) => {
+test('Blob保存でカードとカテゴリーの作成・編集・削除ができる', async (t) => {
   const api = mockPrivateBlob();
   const store = await new BlobStore({ api, token: 'test-token' }).init();
   const server = createAppServer({ appStore: store });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
-  const url = `http://127.0.0.1:${server.address().port}/api/cards`;
-  const save = title => fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, body: '本文', destination: { type: 'self' } })
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const request = async (path, method, body) => {
+    const response = await fetch(`${origin}${path}`, {
+      method,
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined
+    });
+    return { status: response.status, body: await response.json() };
+  };
+
+  const category = await request('/api/categories', 'POST', { name: '面接' });
+  assert.equal(category.status, 201);
+  const card = await request('/api/cards', 'POST', {
+    title: '一次面接', body: '14時開始', destination: { type: 'self' }, categoryIds: [category.body.id]
   });
-
-  api.forceConflicts(1);
-  const saved = await save('保存成功');
-  assert.equal(saved.status, 201);
-  assert.equal(store.snapshot().cards.length, 1);
-
-  api.forceConflicts(5);
-  const conflict = await save('未保存');
-  assert.equal(conflict.status, 409);
-  assert.equal(store.snapshot().cards.length, 1);
+  assert.equal(card.status, 201);
+  const edited = await request(`/api/cards/${card.body.id}`, 'PATCH', { title: '一次面接 更新' });
+  assert.equal(edited.status, 200);
+  assert.equal(edited.body.title, '一次面接 更新');
+  const deletedCategory = await request(`/api/categories/${category.body.id}`, 'DELETE');
+  assert.equal(deletedCategory.status, 200);
+  assert.deepEqual(store.snapshot().cards[0].categoryIds, []);
+  assert.equal((await request(`/api/cards/${card.body.id}`, 'DELETE')).status, 200);
+  assert.deepEqual(store.snapshot().cards, []);
+  assert.deepEqual(store.snapshot().categories, []);
+  const persisted = await new BlobStore({ api, token: 'test-token' }).init();
+  assert.deepEqual(persisted.snapshot(), store.snapshot());
 });
 
 test('private Blobの更新を別インスタンスと次のAPIリクエストで読み取れる', async (t) => {
@@ -142,10 +124,8 @@ test('private Blobの更新を別インスタンスと次のAPIリクエスト�
   const secondStore = await new BlobStore({ api, token: 'test-token' }).init();
   assert.deepEqual(firstStore.snapshot(), { version: 1, companies: [], categories: [], cards: [] });
 
-  await Promise.all([
-    firstStore.update(state => state.categories.push({ id: 'one', name: '面接' })),
-    secondStore.update(state => state.categories.push({ id: 'two', name: '条件' }))
-  ]);
+  await firstStore.update(state => state.categories.push({ id: 'one', name: '面接' }));
+  await secondStore.update(state => state.categories.push({ id: 'two', name: '条件' }));
   await firstStore.refresh();
   assert.deepEqual(firstStore.snapshot().categories.map(c => c.id).sort(), ['one', 'two']);
 
