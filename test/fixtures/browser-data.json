@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "companies": [
+    { "id": "company-a", "name": "確認用企業", "createdAt": "2026-08-01T00:00:00.000Z" }
+  ],
+  "categories": [
+    { "id": "category-interview", "name": "確認用カテゴリー", "createdAt": "2026-08-01T00:00:00.000Z" }
+  ],
+  "cards": [
+    { "id": "card-1", "title": "本日の面接", "body": "本日14時からオンライン面接。本文全文の表示と折りたたみを確認するための文章です。", "destination": { "type": "company", "companyId": "company-a" }, "categoryIds": ["category-interview"], "eventDate": "2099-01-01", "createdAt": "2026-08-30T10:00:00.000Z", "updatedAt": "2026-08-30T10:00:00.000Z", "pinned": true, "pinnedAt": "2026-08-30T10:00:00.000Z", "originalText": null, "isAiGenerated": false },
+    { "id": "card-2", "title": "準備事項 2", "body": "必要物と注意事項を確認するための本文です。", "destination": { "type": "self", "companyId": null }, "categoryIds": [], "eventDate": "2099-01-02", "createdAt": "2026-08-29T10:00:00.000Z", "updatedAt": "2026-08-29T10:00:00.000Z", "pinned": true, "pinnedAt": "2026-08-29T10:00:00.000Z", "originalText": null, "isAiGenerated": false },
+    { "id": "card-3", "title": "準備事項 3", "body": "必要物と注意事項を確認するための本文です。", "destination": { "type": "other", "companyId": null }, "categoryIds": [], "eventDate": "2099-01-03", "createdAt": "2026-08-28T10:00:00.000Z", "updatedAt": "2026-08-28T10:00:00.000Z", "pinned": true, "pinnedAt": "2026-08-28T10:00:00.000Z", "originalText": null, "isAiGenerated": false },
+    { "id": "card-4", "title": "準備事項 4", "body": "必要物と注意事項を確認するための本文です。", "destination": { "type": "self", "companyId": null }, "categoryIds": [], "eventDate": null, "createdAt": "2026-08-27T10:00:00.000Z", "updatedAt": "2026-08-27T10:00:00.000Z", "pinned": true, "pinnedAt": "2026-08-27T10:00:00.000Z", "originalText": null, "isAiGenerated": false },
+    { "id": "card-5", "title": "準備事項 5", "body": "必要物と注意事項を確認するための本文です。", "destination": { "type": "other", "companyId": null }, "categoryIds": [], "eventDate": null, "createdAt": "2026-08-26T10:00:00.000Z", "updatedAt": "2026-08-26T10:00:00.000Z", "pinned": true, "pinnedAt": "2026-08-26T10:00:00.000Z", "originalText": null, "isAiGenerated": false },
+    { "id": "card-6", "title": "過去の予定 6", "body": "過去になった情報も削除せず表示する確認用本文です。", "destination": { "type": "company", "companyId": "company-a" }, "categoryIds": [], "eventDate": "2026-01-06", "createdAt": "2026-08-25T10:00:00.000Z", "updatedAt": "2026-08-25T10:00:00.000Z", "pinned": true, "pinnedAt": "2026-08-25T10:00:00.000Z", "originalText": null, "isAiGenerated": false },
+    { "id": "card-7", "title": "過去の予定 7", "body": "過去になった情報も削除せず表示する確認用本文です。", "destination": { "type": "self", "companyId": null }, "categoryIds": [], "eventDate": "2026-01-05", "createdAt": "2026-08-24T10:00:00.000Z", "updatedAt": "2026-08-24T10:00:00.000Z", "pinned": true, "pinnedAt": "2026-08-24T10:00:00.000Z", "originalText": null, "isAiGenerated": false },
+    { "id": "card-8", "title": "過去の予定 8", "body": "過去になった情報も削除せず表示する確認用本文です。", "destination": { "type": "other", "companyId": null }, "categoryIds": [], "eventDate": "2026-01-04", "createdAt": "2026-08-23T10:00:00.000Z", "updatedAt": "2026-08-23T10:00:00.000Z", "pinned": true, "pinnedAt": "2026-08-23T10:00:00.000Z", "originalText": null, "isAiGenerated": false },
+    { "id": "card-9", "title": "過去の予定 9", "body": "過去になった情報も削除せず表示する確認用本文です。", "destination": { "type": "self", "companyId": null }, "categoryIds": [], "eventDate": "2026-01-03", "createdAt": "2026-08-22T10:00:00.000Z", "updatedAt": "2026-08-22T10:00:00.000Z", "pinned": true, "pinnedAt": "2026-08-22T10:00:00.000Z", "originalText": null, "isAiGenerated": false },
+    { "id": "card-10", "title": "過去の予定 10", "body": "過去になった情報も削除せず表示する確認用本文です。", "destination": { "type": "other", "companyId": null }, "categoryIds": [], "eventDate": "2026-01-02", "createdAt": "2026-08-21T10:00:00.000Z", "updatedAt": "2026-08-21T10:00:00.000Z", "pinned": true, "pinnedAt": "2026-08-21T10:00:00.000Z", "originalText": null, "isAiGenerated": false }
+  ]
+}

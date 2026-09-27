@@ -1,0 +1,15 @@
+{
+  "name": "syukatsu-info-organizer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "test": "node --test",
+    "test:gemini": "node scripts/verify-gemini.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,17 @@
+# Personal app data and atomic write files
+data/*.json
+data/*.tmp
+
+# Local environment variables and credentials
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Generated QA and local artifacts
+artifacts/
+coverage/
+test-results/
+playwright-report/
